@@ -41,20 +41,28 @@ public class Main extends JFrame {
     }
 
     private void createIntroPanel() {
-        JPanel introPanel = new JPanel();
-        introPanel.setLayout(new GridBagLayout());
+        JPanel introPanel = new JPanel(new GridBagLayout());
+        introPanel.setBackground(Color.WHITE);
 
         numberInputField = new JTextField(10);
-        enterButton = new JButton("Enter");
+        JLabel promptLabel = new JLabel("How many numbers to display?");
 
-        JPanel inputPanel = new JPanel();
-        inputPanel.add(new JLabel("Enter number count: "));
-        inputPanel.add(numberInputField);
-        inputPanel.add(enterButton);
+        enterButton = new JButton("Enter");
+        enterButton.setBackground(Color.BLUE);
+        enterButton.setForeground(Color.WHITE);
 
         GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(5, 0, 5, 0);
 
-        introPanel.add(inputPanel, gbc);
+        Component[] components = {promptLabel, numberInputField, enterButton};
+
+        for (Component component : components) {
+            introPanel.add(component, gbc);
+            gbc.gridy++;
+        }
+
         add(introPanel, INTRO_LAYOUT_NAME);
     }
 

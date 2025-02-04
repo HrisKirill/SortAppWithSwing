@@ -70,7 +70,7 @@ public class Main extends JFrame {
     private void createSortPanel() {
         JPanel sortPanel = new JPanel(new BorderLayout());
         numberPanel = new JPanel();
-        sortButton = new JButton("Sort Descending");
+        sortButton = new JButton("Sort");
         resetButton = new JButton("Reset");
 
         configureButtonColors();
@@ -79,6 +79,7 @@ public class Main extends JFrame {
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
         buttonPanel.add(Box.createVerticalStrut(50));
         buttonPanel.add(sortButton);
+        buttonPanel.add(Box.createVerticalStrut(5));
         buttonPanel.add(resetButton);
 
         sortPanel.add(numberPanel, BorderLayout.CENTER);
@@ -120,7 +121,6 @@ public class Main extends JFrame {
     private void handleSortAction() {
         quickSort(numbers, 0, numbers.size() - 1);
         sortDescending = !sortDescending;
-        sortButton.setText(sortDescending ? "Sort Descending" : "Sort Ascending");
         displayNumbers(numbers.size());
     }
 

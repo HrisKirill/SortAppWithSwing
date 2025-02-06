@@ -1,7 +1,27 @@
 package khrystoforov;
 
-import javax.swing.*;
-import java.awt.*;
+
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
+import javax.swing.WindowConstants;
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Frame;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -12,8 +32,18 @@ public class Main extends JFrame {
     private static final int MAX_NUMBER = 1000;
     private static final int MIN_VALUE = 30;
     private static final int ROWS_PER_COLUMN = 10;
+    private static final String APPLICATION_TITLE = "Sort Application";
     private static final String INTRO_LAYOUT_NAME = "Intro";
     private static final String SORT_LAYOUT_NAME = "Sort";
+    private static final String SORT_BUTTON_NAME = "Sort";
+    private static final String RESET_BUTTON_NAME = "Reset";
+    private static final String ENTER_BUTTON_NAME = "Enter";
+    private static final long SORTING_PAUSE_IN_MILLIS = 300;
+    public static final String SMALLER_OR_EQUAL_TO_30_MESSAGE = "Please select a value smaller or equal to 30.";
+    public static final String INVALID_NUMBER_MESSAGE = "Invalid number";
+    private SwingWorker<Void, Void> currentSortingTask;
+
+    private final Random random = new Random();
     private List<Integer> numbers;
     private boolean sortDescending = true;
 
@@ -28,14 +58,14 @@ public class Main extends JFrame {
         createIntroPanel();
         createSortPanel();
 
-        CardLayout cl = (CardLayout) getContentPane().getLayout();
-        setupActions(cl);
+        CardLayout cardLayout = (CardLayout) getContentPane().getLayout();
+        setupActions(cardLayout);
     }
 
     private void initFrame() {
-        setTitle("Sort Application");
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setTitle(APPLICATION_TITLE);
+        setExtendedState(Frame.MAXIMIZED_BOTH);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setLayout(new CardLayout());
         setVisible(true);
     }
@@ -44,23 +74,23 @@ public class Main extends JFrame {
         JPanel introPanel = new JPanel(new GridBagLayout());
         introPanel.setBackground(Color.WHITE);
 
-        numberInputField = new JTextField(10);
+        numberInputField = new JTextField(ROWS_PER_COLUMN);
         JLabel promptLabel = new JLabel("How many numbers to display?");
 
-        enterButton = new JButton("Enter");
+        enterButton = new JButton(ENTER_BUTTON_NAME);
         enterButton.setBackground(Color.BLUE);
         enterButton.setForeground(Color.WHITE);
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.insets = new Insets(5, 0, 5, 0);
+        GridBagConstraints gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.insets = new Insets(5, 0, 5, 0);
 
         Component[] components = {promptLabel, numberInputField, enterButton};
 
         for (Component component : components) {
-            introPanel.add(component, gbc);
-            gbc.gridy++;
+            introPanel.add(component, gridBagConstraints);
+            gridBagConstraints.gridy++;
         }
 
         add(introPanel, INTRO_LAYOUT_NAME);
@@ -70,8 +100,8 @@ public class Main extends JFrame {
     private void createSortPanel() {
         JPanel sortPanel = new JPanel(new BorderLayout());
         numberPanel = new JPanel();
-        sortButton = new JButton("Sort");
-        resetButton = new JButton("Reset");
+        sortButton = new JButton(SORT_BUTTON_NAME);
+        resetButton = new JButton(RESET_BUTTON_NAME);
 
         configureButtonColors();
 
@@ -82,7 +112,12 @@ public class Main extends JFrame {
         buttonPanel.add(Box.createVerticalStrut(5));
         buttonPanel.add(resetButton);
 
-        sortPanel.add(numberPanel, BorderLayout.CENTER);
+
+        JScrollPane scrollPane = new JScrollPane(numberPanel);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+
+        sortPanel.add(scrollPane, BorderLayout.CENTER);
         sortPanel.add(buttonPanel, BorderLayout.EAST);
 
         add(sortPanel, SORT_LAYOUT_NAME);
@@ -95,37 +130,54 @@ public class Main extends JFrame {
         resetButton.setForeground(Color.WHITE);
     }
 
-    private void setupActions(CardLayout cl) {
+    private void setupActions(CardLayout cardLayout) {
         sortButton.addActionListener(e -> handleSortAction());
-        resetButton.addActionListener(e -> cl.show(getContentPane(), INTRO_LAYOUT_NAME));
-        enterButton.addActionListener(e -> handleEnterAction(cl));
+        resetButton.addActionListener(e -> handleResetAction(cardLayout));
+        enterButton.addActionListener(e -> handleEnterAction(cardLayout));
     }
 
-    private void handleEnterAction(CardLayout cl) {
+    private void handleResetAction(CardLayout cardLayout) {
+        if (currentSortingTask != null && !currentSortingTask.isDone()) {
+            currentSortingTask.cancel(true);
+        }
+        cardLayout.show(getContentPane(), INTRO_LAYOUT_NAME);
+    }
+
+    private void handleEnterAction(CardLayout cardLayout) {
         int numberCount;
         try {
             numberCount = Integer.parseInt(numberInputField.getText());
-            if (numberCount <= 0 || numberCount > MAX_NUMBER) {
-                throw new NumberFormatException();
-            }
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Please enter a valid integer between 1 and 1000.");
+            JOptionPane.showMessageDialog(this, INVALID_NUMBER_MESSAGE);
             return;
         }
         generateRandomNumbers(numberCount);
         displayNumbers(numberCount);
-        cl.show(getContentPane(), SORT_LAYOUT_NAME);
+        cardLayout.show(getContentPane(), SORT_LAYOUT_NAME);
     }
 
     private void handleSortAction() {
-        quickSort(numbers, 0, numbers.size() - 1);
-        sortDescending = !sortDescending;
-        displayNumbers(numbers.size());
+        if (currentSortingTask != null && !currentSortingTask.isDone()) {
+            System.out.println("Here");
+            currentSortingTask.cancel(true);
+        }
+        currentSortingTask = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() {
+                quickSort(numbers, 0, numbers.size() - 1);
+                sortDescending = !sortDescending;
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                displayNumbers(numbers.size());
+            }
+        };
+        currentSortingTask.execute();
     }
 
     private void generateRandomNumbers(int count) {
-        Random random = new Random();
         numbers = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
@@ -149,10 +201,11 @@ public class Main extends JFrame {
             columnPanel.setLayout(new GridLayout(ROWS_PER_COLUMN, 1, 5, 5));
 
             for (int j = 0; j < ROWS_PER_COLUMN && i * ROWS_PER_COLUMN + j < count; j++) {
-                JButton numberButton = new JButton(String.valueOf(numbers.get(i * ROWS_PER_COLUMN + j)));
+                int index = i * ROWS_PER_COLUMN + j;
+                JButton numberButton = new JButton(String.valueOf(numbers.get(index)));
                 numberButton.setBackground(Color.BLUE);
                 numberButton.setForeground(Color.WHITE);
-                numberButton.addActionListener(new NumberButtonListener(numbers.get(i * ROWS_PER_COLUMN + j)));
+                numberButton.addActionListener(new NumberButtonListener(numbers.get(index)));
                 columnPanel.add(numberButton);
             }
 
@@ -180,17 +233,51 @@ public class Main extends JFrame {
             if (sortDescending == (list.get(j) > pivot)) {
                 i++;
 
-                int temp = list.get(i);
-                list.set(i, list.get(j));
-                list.set(j, temp);
+                swapAndDisplay(list, i, j);
             }
         }
 
-        int temp = list.get(i + 1);
-        list.set(i + 1, list.get(high));
-        list.set(high, temp);
-
+        swapAndDisplay(list, i + 1, high);
         return i + 1;
+    }
+
+    private void swapAndDisplay(List<Integer> list, int i, int j) {
+        int temp = list.get(i);
+        list.set(i, list.get(j));
+        list.set(j, temp);
+
+        highlightSwap(i, j);
+        displayNumbers(list.size());
+        pauseSorting();
+    }
+
+    private void highlightSwap(int i, int j) {
+        int col1 = i / ROWS_PER_COLUMN;
+        int row1 = i % ROWS_PER_COLUMN;
+        int col2 = j / ROWS_PER_COLUMN;
+        int row2 = j % ROWS_PER_COLUMN;
+
+        JPanel column1 = (JPanel) numberPanel.getComponent(col1);
+        JPanel column2 = (JPanel) numberPanel.getComponent(col2);
+
+        JButton button1 = (JButton) column1.getComponent(row1);
+        JButton button2 = (JButton) column2.getComponent(row2);
+
+        button1.setBackground(Color.RED);
+        button2.setBackground(Color.RED);
+
+        pauseSorting();
+
+        button1.setBackground(Color.BLUE);
+        button2.setBackground(Color.BLUE);
+    }
+
+    private void pauseSorting() {
+        try {
+            Thread.sleep(SORTING_PAUSE_IN_MILLIS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private class NumberButtonListener implements ActionListener {
@@ -203,10 +290,11 @@ public class Main extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             if (value <= MIN_VALUE) {
-                generateRandomNumbers(numbers.size());
-                displayNumbers(numbers.size());
+                generateRandomNumbers(value);
+                displayNumbers(value);
+                sortDescending = true;
             } else {
-                JOptionPane.showMessageDialog(Main.this, "Please select a value smaller or equal to 30.");
+                JOptionPane.showMessageDialog(Main.this, SMALLER_OR_EQUAL_TO_30_MESSAGE);
             }
         }
     }

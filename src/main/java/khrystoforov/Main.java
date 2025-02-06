@@ -28,6 +28,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+
+/**
+ * Main class that creates a GUI for sorting numbers in a given order (ascending/descending).
+ * The sorting is done using the QuickSort algorithm with visual updates on the UI after each swap.
+ *
+ * @author Khrystoforov Kyrylo
+ * @version 1.0
+ */
 public class Main extends JFrame {
     private static final int MAX_NUMBER = 1000;
     private static final int MIN_VALUE = 30;
@@ -176,6 +184,11 @@ public class Main extends JFrame {
         currentSortingTask.execute();
     }
 
+    /**
+     * Generates a list of random numbers, ensuring that at least one number is smaller or equal to 30.
+     *
+     * @param count The number of random numbers to generate.
+     */
     private void generateRandomNumbers(int count) {
         numbers = new ArrayList<>();
 
@@ -240,6 +253,13 @@ public class Main extends JFrame {
         return i + 1;
     }
 
+    /**
+     * Swaps two elements in the list and updates the UI to reflect the changes.
+     *
+     * @param list The list where the elements should be swapped.
+     * @param i    The index of the first element.
+     * @param j    The index of the second element.
+     */
     private void swapAndDisplay(List<Integer> list, int i, int j) {
         int temp = list.get(i);
         list.set(i, list.get(j));
@@ -279,6 +299,10 @@ public class Main extends JFrame {
         }
     }
 
+    /**
+     * The listener for each number button. When clicked, it generates a new set of random numbers
+     * if the value is less than or equal to 30.
+     */
     private class NumberButtonListener implements ActionListener {
         private final int value;
 

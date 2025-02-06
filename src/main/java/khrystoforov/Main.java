@@ -158,7 +158,6 @@ public class Main extends JFrame {
 
     private void handleSortAction() {
         if (currentSortingTask != null && !currentSortingTask.isDone()) {
-            System.out.println("Here");
             currentSortingTask.cancel(true);
         }
         currentSortingTask = new SwingWorker<>() {
